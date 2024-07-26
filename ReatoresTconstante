@@ -1,0 +1,245 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def r1(Ti,Pi):
+	if Pi[0]<=0 or Pi[1]<=0 or Pi[2]<=0:
+		return 0
+	return 0.1036*(np.exp(-3674/Ti))*(Pi[2])*(Pi[0])*(Pi[1])*(1+1.7*Pi[4])/((1+0.583*Pi[2]*(1+1.7*Pi[4]))*(1+6.8*Pi[1]))*10
+def r2(Ti,Pi):
+	if Pi[0]<0 or Pi[1]<0 or Pi[2]<0:
+		return 0
+	return 1.9365*100000*np.exp(-10116/Ti)*Pi[2]*(1+0.68*Pi[4])/(1+0.76*Pi[2]*(1+0.68*Pi[4]))
+	
+def Ergun(A,Pt,Pt0,Ft,Ft0,Ti,T0):
+	if Pt>0.1:
+		return -(A/2)*(Pt0)**2/(Pt)*(Ti/T0)*(Ft/Ft0)
+	else:
+		return 0
+
+def Simulacao(y,P,T,F,X,S,Num,dw,A,Llin):
+	fim = 1
+	for i in range(0,Num-1):
+		#Kappa1:
+		R = [0,0,0,0] # [Calculado r1, Calculado r2, média r1, média r2]
+		Pcor = [0,0]
+		yi = [y[0][i],y[1][i],y[2][i],y[3][i],y[4][i],y[5][i]]
+		Pt = P[i]
+		Pi = [Pt*yi[0],Pt*yi[1],Pt*yi[2],Pt*yi[3],Pt*yi[4],Pt*yi[5]]
+		Ti = T[i]
+		Ft = F[i]
+		R[0] = r1(Ti,Pi)
+		R[1] = r2(Ti,Pi)
+		R[2] = R[0]/6
+		R[3] = R[1]/6
+		Pcor[0] = Ergun(A,Pt,P[0],Ft,F[0],Ti,T[0])
+		Pcor[1] = Pcor[0]/6
+		
+		yi = [yi[0]*Ft-(R[0]+R[1])*dw/2, yi[1]*Ft-R[0]*dw/2,yi[2]*Ft-(0.5*R[0]+3*R[1])*dw/2,yi[3]*Ft+R[0]*dw/2,yi[4]+(R[0]+2*R[1])*dw/2,yi[5]*Ft+2*R[1]*dw/2]
+		Ft = (yi[0]+yi[1]+yi[2]+yi[3]+yi[4]+yi[5])
+		yi = [yi[0]/Ft,yi[1]/Ft,yi[2]/Ft,yi[3]/Ft,yi[4]/Ft,yi[5]/Ft]
+		Pt = P[i]+Pcor[0]*dw/2
+		Pi = [Pt*yi[0],Pt*yi[1],Pt*yi[2],Pt*yi[3],Pt*yi[4],Pt*yi[5]]
+		Ti = Ti
+		
+		#Kappa2
+		R[0] = r1(Ti,Pi)
+		R[1] = r2(Ti,Pi)
+		R[2] += R[0]/3
+		R[3] += R[1]/3
+		Pcor[0] = Ergun(A,Pt,P[0],Ft,F[0],Ti,T[0])
+		Pcor[1] += Pcor[0]/3
+		
+		yi = [yi[0]*Ft-(R[0]+R[1])*dw/2, yi[1]*Ft-R[0]*dw/2,yi[2]*Ft-(0.5*R[0]+3*R[1])*dw/2,yi[3]*Ft+R[0]*dw/2,yi[4]+(R[0]+2*R[1])*dw/2,yi[5]*Ft+2*R[1]*dw/2]
+		Ft = (yi[0]+yi[1]+yi[2]+yi[3]+yi[4]+yi[5])
+		yi = [yi[0]/Ft,yi[1]/Ft,yi[2]/Ft,yi[3]/Ft,yi[4]/Ft,yi[5]/Ft]
+		Pt = P[i]+Pcor[0]*dw/2
+		Pi = [Pt*yi[0],Pt*yi[1],Pt*yi[2],Pt*yi[3],Pt*yi[4],Pt*yi[5]]
+		Ti = Ti
+		
+		#Kappa3
+		R[0] = r1(Ti,Pi)
+		R[1] = r2(Ti,Pi)
+		R[2] += R[0]/3
+		R[3] += R[1]/3
+		Pcor[0] = Ergun(A,Pt,P[0],Ft,F[0],Ti,T[0])
+		Pcor[1] += Pcor[0]/3
+		
+		yi = [yi[0]*Ft-(R[0]+R[1])*dw, yi[1]*Ft-R[0]*dw,yi[2]*Ft-(0.5*R[0]+3*R[1])*dw,yi[3]*Ft+R[0]*dw,yi[4]+(R[0]+2*R[1])*dw,yi[5]*Ft+2*R[1]*dw]
+		Ft = (yi[0]+yi[1]+yi[2]+yi[3]+yi[4]+yi[5])
+		yi = [yi[0]/Ft,yi[1]/Ft,yi[2]/Ft,yi[3]/Ft,yi[4]/Ft,yi[5]/Ft]
+		Pt = P[i]+Pcor[0]*dw
+		Pi = [Pt*yi[0],Pt*yi[1],Pt*yi[2],Pt*yi[3],Pt*yi[4],Pt*yi[5]]
+		Ti = Ti
+		#Kappa4
+		
+		R[0] = r1(Ti,Pi)
+		R[1] = r2(Ti,Pi)
+		R[2] += R[0]/6
+		R[3] += R[1]/6
+		Pcor[0] = Ergun(A,Pt,P[0],Ft,F[0],Ti,T[0])
+		Pcor[1] += Pcor[0]/6
+		Y = [y[0][i]*F[i]-(R[2]+R[3])*dw,y[1][i]*F[i]-R[2]*dw,y[2][i]*F[i]-(0.5*R[2]+3*R[3])*dw,y[3][i]*F[i]+R[2]*dw,y[4][i]*F[i]+(R[2]+2*R[3])*dw,y[5][i-1]*F[i]+2*R[3]*dw]
+		F[i+1] = Y[0]+Y[1]+Y[2]+Y[3]+Y[4]+Y[5]
+		y[0][i+1] = Y[0]/F[i+1]
+		y[1][i+1] = Y[1]/F[i+1]
+		y[2][i+1] = Y[2]/F[i+1]
+		y[3][i+1] = Y[3]/F[i+1]
+		y[4][i+1] = Y[4]/F[i+1]
+		y[5][i+1] = Y[5]/F[i+1]
+		P[i+1] = P[i] + Pcor[1]*dw
+		T[i+1] = T[i]
+		X[i+1] = (y[1][0]*F[0]-y[1][i]*F[i])/(y[1][0]*F[0])*100
+		S[i+1] = y[3][i+1]/(y[5][i+1]/2+y[3][i+1])*100
+		if fim:
+			if X[i+1]>=30:
+				Ntubos = (70000*10**6/86.09 /(330 *24*60)/(F[i+1]*y[3][i+1]*454))
+				print("Conversao = ", X[i+1])
+				print("Ntubos = ",Ntubos)
+				print("L = ",(dw*i)*Llin)
+				print("F = ",F[i+1])
+				print("P = ",P[i+1])
+				print("yC2H4 = ",y[0][i+1])
+				print("yHAc = ",y[1][i+1])
+				print("yO2 = ",y[2][i+1])
+				print("yVAc = ",y[3][i+1])
+				print("yH2O = ",y[4][i+1])
+				print("CO2 = ",y[5][i+1])
+				print("Seletividade = ",y[3][i+1]/(y[5][i+1]/2+y[3][i+1])*100)
+				print(Ntubos*(dw*i)*Llin)
+				fim = 0
+	return P,T
+				
+def main():
+
+	phi = 0.5
+	gc = 32.2*3600/0.00694 #lbm/psi*ft*min²
+	dcat = 30 #densidade do leito em lb/ft³
+	Dtubo = 2 # Diâmetro do tubo em polegadas
+	St = (np.pi*Dtubo**2)/4/144 #Seção transversal em ft²
+	mi0 = 6.9*10**(-6) #viscosidade do eteno (lbm/ft)
+	Dp = 0.25/12 #diâmetro do catalisador em ft
+	
+	MO2 = 32
+	MHAc = 60.052
+	MC2H4 = 28.05
+	
+	L0 = 0
+	Lf = 10.5 #ft ###PODE ALTERAR###
+	W0 = dcat*St*L0*(1-phi)
+	Wf = dcat*St*Lf*(1-phi)
+	Llin = (Lf-L0)/(Wf-W0)
+	dw = 0.0001 #TALVEZ PRECISE ALTERAR
+
+
+	Num = int((Wf-W0)/dw)
+	y = np.zeros((6,Num)) # C2H4, CH3COOH, O2, H2C=CHOCOCH3, H2O, CO2
+	P = np.zeros(Num)
+	T = np.zeros(Num)
+	X = np.zeros(Num) #Fração convertida de HAc
+	F = np.zeros(Num)
+	S = np.zeros(Num)
+	massa = np.linspace(W0,Wf,Num)
+	Ltubo = np.linspace(L0,Lf,Num)
+	
+	
+	y[1][0] = 0.107 #fração molar inicial de Ácido Acético PODE ALTERAR
+	y[2][0] = 0.075 #fração molar inicial de Oxigênio PODE ALTERAR
+	y[0][0] = 1-y[1][0]-y[2][0] #fração molar inicial de C2H4
+	T[0] = 150+273.15
+	P[0] = 128
+	#Por tubo:
+	F[0] = 0.2356 #lbmol/min	###PODE ALTERAR
+	G = F[0]*(y[1][0]*MHAc+y[2][0]*MO2+y[0][0]*MC2H4)/St #lb/(min*ft²)
+	
+	#Equação de Ergun:
+	R = 10.73 #ft³*psi/(R*lbmol)
+	p0 = P[0]*(y[1][0]*MHAc+y[2][0]*MO2+y[0][0]*MC2H4)/(R*(1.8*T[0])) #lb/ft³
+	B = G*(1-phi)/(p0*gc*Dp*phi**3)*(150*(1-phi)*mi0/Dp+1.75*G)
+	A = 2*B/(St*(1-phi)*dcat*P[0])
+	
+	#Boleanos para gerar os gráficos dos seguintes compostos em função do tempo:
+	grafico = 0
+	mcat = 0
+	tubo = 1
+	conversao = 1
+	seletividade = 1
+	pressao = 1
+	Eteno = 0
+	HAc = 1
+	O2 = 1
+	VAc = 1
+	H2O = 0
+	CO2 = 0
+	
+	if y[2][0]<0.08:
+		print("F = ",F[0])
+		print("HAC0 = ",y[1][0])
+		P,T = Simulacao(y,P,T,F,X,S,Num,dw,A,Llin)
+		S[0] = S[1]
+		#Ntubos = (70000*10**6/86.09 /(330*24*60)/(F[-1]*y[3][-1]*453.592))
+		#print(Ntubos)
+		"""print("Pf = ",Pi[0][Num-1]+Pi[1][Num-1]+Pi[2][Num-1]+Pi[3][Num-1]+Pi[4][Num-1]+Pi[5][Num-1])
+		print("Volume reator = ",V)
+		print("Conversão = ", 100*(1-Pi[1][Num-1]/Pi[1][0]*(T[0]/T[Num-1])))"""
+		if grafico:
+			if mcat:
+				plt.figure(figsize=(16,5))
+				if Eteno: 
+					plt.plot(massa,y[0])
+				if HAc:
+					plt.plot(massa,y[1])
+				if O2:
+					plt.plot(massa,y[2])
+				if VAc:
+					plt.plot(massa,y[3])
+				if H2O:
+					plt.plot(massa,y[4])
+				if CO2:
+					plt.plot(massa,y[5])
+				plt.xlabel("Massa catalisador",fontsize=18)
+				plt.ylabel("Fração molar",fontsize=18)
+				plt.title('Gráfico fração molar por massa de catalisador')
+				plt.show()
+			if tubo:
+				plt.figure(figsize=(16,5))
+				if Eteno: 
+					plt.plot(Ltubo,y[0])
+				if HAc:
+					plt.plot(Ltubo,y[1])
+				if O2:
+					plt.plot(Ltubo,y[2])
+				if VAc:
+					plt.plot(Ltubo,y[3])
+				if H2O:
+					plt.plot(Ltubo,y[4])
+				if CO2:
+					plt.plot(Ltubo,y[5])
+				plt.xlabel("Comprimento do tubo",fontsize=18)
+				plt.ylabel("Fração molar",fontsize=18)
+				plt.title('Gráfico fração molar por comprimento do tubo')
+				plt.show()
+			if conversao:
+				plt.figure(figsize=(16,5))
+				plt.plot(massa,X)
+				plt.xlabel("Massa catalisador",fontsize=18)
+				plt.ylabel("Conversão",fontsize=18)
+				plt.title('Gráfico conversão por massa de catalisador')
+				plt.show()
+			if pressao:
+				plt.figure(figsize=(16,5))
+				plt.plot(Ltubo,P)
+				plt.xlabel("Comprimento do tubo",fontsize=18)
+				plt.ylabel("Pressão",fontsize=18)
+				plt.title('Gráfico Pressão pelo comprimento do tubo')
+				plt.show()
+			if seletividade:
+				plt.figure(figsize=(16,5))
+				plt.plot(massa,S)
+				plt.xlabel("Massa catalisador",fontsize=18)
+				plt.ylabel("Seletividade",fontsize=18)
+				plt.title('Gráfico seletividade por massa de catalisador')
+				plt.show()						
+		
+	else:
+		print("Pressões parciais incorretas")
+main()
